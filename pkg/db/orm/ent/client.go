@@ -8,7 +8,6 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/toufiq-austcse/go-api-boilerplate/config"
-	"github.com/toufiq-austcse/go-api-boilerplate/ent"
 	"github.com/toufiq-austcse/go-api-boilerplate/enums/db_driver"
 	"github.com/toufiq-austcse/go-api-boilerplate/pkg/db/providers/mysql"
 	"github.com/toufiq-austcse/go-api-boilerplate/pkg/db/providers/postgresql"
@@ -21,7 +20,6 @@ func New() (*ent.Client, error) {
 	}
 
 	drv := entsql.OpenDB(dbDialect, db)
-	client := ent.NewClient(ent.Driver(drv))
 	if config.AppConfig.DB_CONFIG.DEBUG_ENABLED == "true" {
 		return client.Debug(), nil
 	}

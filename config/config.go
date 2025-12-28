@@ -13,11 +13,13 @@ const (
 
 type (
 	Config struct {
-		PORT           string
-		APP_NAME       string
-		APP_URL        string
-		DB_DRIVER_NAME string
-		DB_CONFIG      DB_CONFIG
+		PORT                string
+		APP_NAME            string
+		APP_URL             string
+		DB_DRIVER_NAME      string
+		OME_SERVER_BASE_URL string
+		DB_CONFIG           DB_CONFIG
+		MONGO_DB_CONFIG     MONGO_DB_CONFIG
 	}
 	DB_CONFIG struct {
 		DB_NAME       string
@@ -26,6 +28,10 @@ type (
 		USER          string
 		PASSWORD      string
 		DEBUG_ENABLED string
+	}
+	MONGO_DB_CONFIG struct {
+		MONGODB_URL  string
+		MONGODB_NAME string
 	}
 )
 
@@ -51,6 +57,9 @@ func setFromEnv(config *Config) {
 	config.DB_DRIVER_NAME = viper.GetString("DB_DRIVER_NAME")
 	config.DB_CONFIG.USER = viper.GetString("DB_USER")
 	config.DB_CONFIG.DEBUG_ENABLED = viper.GetString("DB_DEBUG_ENABLED")
+	config.MONGO_DB_CONFIG.MONGODB_URL = viper.GetString("MONGODB_URL")
+	config.MONGO_DB_CONFIG.MONGODB_NAME = viper.GetString("MONGODB_NAME")
+	config.OME_SERVER_BASE_URL = viper.GetString("OME_SERVER_BASE_URL")
 }
 
 func parseConfigFile(envFilePath, configName string) {

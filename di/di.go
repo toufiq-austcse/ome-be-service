@@ -2,10 +2,10 @@ package di
 
 import (
 	_ "github.com/lib/pq" // <------------ here
-	"github.com/toufiq-austcse/go-api-boilerplate/internal/api/todo/controller"
-	"github.com/toufiq-austcse/go-api-boilerplate/internal/api/todo/repository"
-	"github.com/toufiq-austcse/go-api-boilerplate/internal/api/todo/service"
-	"github.com/toufiq-austcse/go-api-boilerplate/pkg/db/orm/ent"
+	"github.com/toufiq-austcse/go-api-boilerplate/internal/api/index/controller"
+	"github.com/toufiq-austcse/go-api-boilerplate/internal/api/index/service"
+	"github.com/toufiq-austcse/go-api-boilerplate/pkg/db/providers/mongodb"
+	"github.com/toufiq-austcse/go-api-boilerplate/pkg/http_clients"
 	"go.uber.org/dig"
 )
 
@@ -13,10 +13,10 @@ func NewDiContainer() (*dig.Container, error) {
 	c := dig.New()
 	providers := []interface {
 	}{
-		ent.New,
-		repository.NewRepository,
-		service.NewTodoService,
-		controller.NewTodoController,
+		controller.NewOmeController,
+		http_clients.NewOmeHTTPClient,
+		mongodb.New,
+		service.NewOmeService,
 	}
 	for _, provider := range providers {
 		if err := c.Provide(provider); err != nil {

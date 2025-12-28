@@ -90,10 +90,10 @@ var doc = `{
                 "tags": [
                     "Todo"
                 ],
-                "summary": "Create Todo",
+                "summary": "CreateStream Todo",
                 "parameters": [
                     {
-                        "description": "Create Todo Payload",
+                        "description": "CreateStream Todo Payload",
                         "name": "request",
                         "in": "body",
                         "required": true,
