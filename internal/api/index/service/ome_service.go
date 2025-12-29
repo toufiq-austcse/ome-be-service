@@ -2,20 +2,28 @@ package service
 
 import (
 	"context"
-	"fmt"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 	"net/url"
 	"strings"
+	"time"
+
+	"github.com/toufiq-austcse/go-api-boilerplate/internal/api/index/model"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type OmeService struct {
-	db *mongo.Database
+	streamCollection *mongo.Collection
+	pushCollection   *mongo.Collection
 }
 
 func NewOmeService(db *mongo.Database) *OmeService {
+	streamCollection := db.Collection("streams")
+	pushCollection := db.Collection("pushes")
+
 	return &OmeService{
-		db: db,
+		streamCollection: streamCollection,
+		pushCollection:   pushCollection,
 	}
 }
 
@@ -38,55 +46,131 @@ func (s OmeService) GetStreamName(urlStr string) string {
 	return ""
 }
 
-func (s OmeService) Create(c context.Context) (interface{}, error) {
-	collection := s.db.Collection("streams")
-	document := map[string]interface{}{
-		"status": "inactive",
-	}
-	result, err := collection.InsertOne(c, document)
+func (s OmeService) CreateStream(
+	ctx context.Context, model *model.Stream) (*model.Stream, error) {
+	model.Id = primitive.NewObjectID()
+	currentTime := time.Now()
+	model.CreatedAt = currentTime
+	model.UpdatedAt = currentTime
+
+	_, err := s.streamCollection.InsertOne(ctx, model)
 	if err != nil {
 		return nil, err
 	}
+	return model, nil
+}
 
-	var createdStream map[string]interface{}
-	err = collection.FindOne(c, map[string]interface{}{
-		"_id": result.InsertedID,
-	}).Decode(&createdStream)
+func (s OmeService) GetStreamByExternalId(ctx context.Context, externalId string) (*model.Stream, error) {
+	var result model.Stream
 
+	filter := bson.M{"external_id": externalId}
+	err := s.streamCollection.FindOne(ctx, filter).Decode(&result)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &result, nil
+}
+
+func (s OmeService) FindStreamById(c context.Context, id primitive.ObjectID) (*model.Stream, error) {
+	var result model.Stream
+
+	filter := bson.M{"_id": id}
+	err := s.streamCollection.FindOne(c, filter).Decode(&result)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &result, nil
+}
+func (s OmeService) UpdateStreamByID(ctx context.Context, id primitive.ObjectID, update bson.M) (*model.Stream, error) {
+	update["updated_at"] = time.Now()
+
+	result, err := s.streamCollection.UpdateByID(
+		ctx,
+		id,
+		bson.M{"$set": update},
+	)
 	if err != nil {
 		return nil, err
 	}
+	if result.MatchedCount == 0 {
+		return nil, nil
+	}
 
-	return createdStream, nil
-}
-
-func (s OmeService) UpdateStreamById(c context.Context, id primitive.ObjectID, updatedData map[string]interface{}) error {
-	fmt.Println("Updating stream ID:", id)
-	collection := s.db.Collection("streams")
-	_, err := collection.UpdateByID(c, id, map[string]interface{}{
-		"$set": updatedData,
-	})
-	return err
-}
-
-func (s OmeService) UpdateStatusByName(c context.Context, id string, status string) error {
-	collection := s.db.Collection("streams")
-	_, err := collection.UpdateByID(c, id, map[string]interface{}{
-		"$set": map[string]interface{}{
-			"status": status,
-		},
-	})
-	return err
-}
-func (s *OmeService) FindByID(c context.Context, id primitive.ObjectID) (map[string]interface{}, error) {
-	collection := s.db.Collection("streams")
-	var stream map[string]interface{}
-	err := collection.FindOne(c, map[string]interface{}{
-		"_id": id,
-	}).Decode(&stream)
+	updatedStream, err := s.FindStreamById(ctx, id)
 	if err != nil {
 		return nil, err
 	}
-	return stream, nil
+	return updatedStream, nil
+}
+
+func (s OmeService) CreatePush(
+	ctx context.Context, model *model.Push) (*model.Push, error) {
+	if model.Id.IsZero() {
+		model.Id = primitive.NewObjectID()
+	}
+	model.Id = primitive.NewObjectID()
+	currentTime := time.Now()
+	model.CreatedAt = currentTime
+	model.UpdatedAt = currentTime
+
+	_, err := s.pushCollection.InsertOne(ctx, model)
+	if err != nil {
+		return nil, err
+	}
+	return model, nil
+}
+
+func (s OmeService) FindPushByStreamIdAndStatus(ctx context.Context, id primitive.ObjectID, status string) (*model.Push, error) {
+	var result model.Push
+
+	filter := bson.M{"stream_id": id, "status": status}
+	err := s.pushCollection.FindOne(ctx, filter).Decode(&result)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &result, nil
+}
+func (s OmeService) UpdatePushByID(ctx context.Context, id primitive.ObjectID, update bson.M) (*model.Push, error) {
+	update["updated_at"] = time.Now()
+
+	result, err := s.pushCollection.UpdateByID(
+		ctx,
+		id,
+		bson.M{"$set": update},
+	)
+	if err != nil {
+		return nil, err
+	}
+	if result.MatchedCount == 0 {
+		return nil, nil
+	}
+	updatedPush, err := s.FindPushById(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	return updatedPush, nil
+}
+
+func (s OmeService) FindPushById(ctx context.Context, id primitive.ObjectID) (*model.Push, error) {
+	var result model.Push
+
+	filter := bson.M{"_id": id}
+	err := s.pushCollection.FindOne(ctx, filter).Decode(&result)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &result, nil
 
 }

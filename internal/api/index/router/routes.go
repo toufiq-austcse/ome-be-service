@@ -9,8 +9,7 @@ func Setup(group *gin.RouterGroup, omeController *controller.OmeController) {
 	group.GET("", controller.Index())
 	group.POST("/ome/webhook", omeController.Webhook)
 	group.POST("/ome/create", omeController.CreateStream)
-	group.DELETE("/ome/:id", omeController.StopStream)
-	group.POST("/ome/:id/startPush", omeController.StartPush)
-	group.POST("/ome/:id/stopPush", omeController.StopPush)
+	group.POST("/ome/startPush", omeController.StartPush)
+	group.POST("/ome/stopPush", omeController.StopPush)
 
 }

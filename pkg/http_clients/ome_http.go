@@ -2,8 +2,9 @@ package http_clients
 
 import (
 	"fmt"
+	"net/http"
+
 	"github.com/go-resty/resty/v2"
-	"github.com/google/uuid"
 )
 
 type OmeHTTPClient struct {
@@ -60,13 +61,10 @@ func NewOmeHTTPClient() *OmeHTTPClient {
 	}
 }
 
-func (c *OmeHTTPClient) StartPush(ip string, streamName string, rtmpUrl string) (*StartPushResponse, error) {
+func (c *OmeHTTPClient) StartPush(ip string, streamName string, rtmpUrl string, pushId string) (*StartPushResponse, error) {
 	baseUrl := "http://" + ip + ":8081"
 
-	// Generate unique ID for the push
-	pushId := "push_" + uuid.New().String()
-
-	// Create request payload
+	// CreateStream request payload
 	requestBody := StartPushRequest{
 		ID: pushId,
 		Stream: StartPushStream{
@@ -93,8 +91,12 @@ func (c *OmeHTTPClient) StartPush(ip string, streamName string, rtmpUrl string) 
 	return &response, nil
 }
 
+func (c *OmeHTTPClient) GetBaseUrlFromIp(ip string) string {
+	return "http://" + ip + ":8081"
+}
+
 func (c *OmeHTTPClient) StopPush(ip string, pushId string) error {
-	baseUrl := "http://" + ip + ":8081"
+	baseUrl := c.GetBaseUrlFromIp(ip)
 
 	resp, err := c.restyReq.
 		SetBody(map[string]interface{}{
@@ -110,5 +112,22 @@ func (c *OmeHTTPClient) StopPush(ip string, pushId string) error {
 		return fmt.Errorf("stop push failed with status code: %d", resp.StatusCode())
 	}
 
+	return nil
+}
+func (c *OmeHTTPClient) DeleteStream(streamName string, ip string) error {
+	fmt.Println("Deleting stream:", streamName, "from IP:", ip)
+
+	baseUrl := c.GetBaseUrlFromIp(ip)
+
+	deleteResponse, err := c.restyReq.Delete(baseUrl + "/v1/vhosts/default/apps/app/streams/" + streamName)
+	if err != nil {
+		fmt.Println("Failed to delete stream:", err)
+		return err
+	}
+	fmt.Printf("Delete stream response: %v\n", deleteResponse)
+	if deleteResponse.IsError() && deleteResponse.StatusCode() != http.StatusNotFound {
+		fmt.Println("Delete stream failed with status code:", deleteResponse.StatusCode(), deleteResponse.Request.URL)
+		return fmt.Errorf("delete stream failed with status code: %d", deleteResponse.StatusCode())
+	}
 	return nil
 }
