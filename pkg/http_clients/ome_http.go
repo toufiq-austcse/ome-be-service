@@ -68,11 +68,14 @@ func (c *OmeHTTPClient) StartPush(ip string, streamName string, rtmpUrl string, 
 	requestBody := StartPushRequest{
 		ID: pushId,
 		Stream: StartPushStream{
-			Name: streamName,
+			Name: streamName + "_rtmp",
 		},
 		Protocol: "rtmp",
 		URL:      rtmpUrl,
 	}
+
+	fmt.Println("baseUrl ", baseUrl)
+	fmt.Println("requestBody", requestBody)
 
 	var response StartPushResponse
 	resp, err := c.restyReq.
@@ -98,6 +101,8 @@ func (c *OmeHTTPClient) GetBaseUrlFromIp(ip string) string {
 func (c *OmeHTTPClient) StopPush(ip string, pushId string) error {
 	baseUrl := c.GetBaseUrlFromIp(ip)
 
+	fmt.Println("baseUrl ", baseUrl)
+	fmt.Println("stopping push", pushId)
 	resp, err := c.restyReq.
 		SetBody(map[string]interface{}{
 			"id": pushId,

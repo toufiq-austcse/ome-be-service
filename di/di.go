@@ -2,8 +2,8 @@ package di
 
 import (
 	_ "github.com/lib/pq" // <------------ here
-	"github.com/toufiq-austcse/go-api-boilerplate/internal/api/index/controller"
-	"github.com/toufiq-austcse/go-api-boilerplate/internal/api/index/service"
+	"github.com/toufiq-austcse/go-api-boilerplate/internal/api/ome/controller"
+	"github.com/toufiq-austcse/go-api-boilerplate/internal/api/ome/service"
 	"github.com/toufiq-austcse/go-api-boilerplate/pkg/db/providers/mongodb"
 	"github.com/toufiq-austcse/go-api-boilerplate/pkg/http_clients"
 	"go.uber.org/dig"

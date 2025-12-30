@@ -6,8 +6,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/toufiq-austcse/go-api-boilerplate/config"
-	"github.com/toufiq-austcse/go-api-boilerplate/internal/api/index/model"
-	"github.com/toufiq-austcse/go-api-boilerplate/internal/api/index/service"
+	"github.com/toufiq-austcse/go-api-boilerplate/internal/api/ome/model"
+	"github.com/toufiq-austcse/go-api-boilerplate/internal/api/ome/service"
 	"github.com/toufiq-austcse/go-api-boilerplate/pkg/api_response"
 	"github.com/toufiq-austcse/go-api-boilerplate/pkg/http_clients"
 	"go.mongodb.org/mongo-driver/bson"
@@ -253,26 +253,12 @@ func (controller *OmeController) StartPush(c *gin.Context) {
 			return
 		}
 	}
-	pushId := primitive.NewObjectID()
 
-	_, err = controller.omeHttpClient.StartPush(
-		existingStream.ServerIpAddress,
-		existingStream.Id.Hex(),
-		body.RtmpUrl, pushId.Hex())
-	if err != nil {
-		fmt.Println("Error starting push:", err)
-		errResponse := api_response.BuildErrorResponse(
-			http.StatusInternalServerError,
-			"Failed to start push",
-			err.Error(), "")
-		c.JSON(errResponse.Code, errResponse)
-		return
-	}
-	_, err = controller.omeService.CreatePush(c, &model.Push{
-		StreamId: objId,
-		RtmpUrl:  body.RtmpUrl,
-		Status:   "active",
-		Id:       pushId,
+	createdPush, err := controller.omeService.CreatePush(c, &model.Push{
+		StreamId:        objId,
+		RtmpUrl:         body.RtmpUrl,
+		ServerIpAddress: existingStream.ServerIpAddress,
+		Status:          "pending",
 	})
 	if err != nil {
 		fmt.Println("Error creating push record:", err)
@@ -284,9 +270,38 @@ func (controller *OmeController) StartPush(c *gin.Context) {
 		return
 	}
 
+	_, err = controller.omeHttpClient.StartPush(
+		existingStream.ServerIpAddress,
+		existingStream.Id.Hex(),
+		body.RtmpUrl, createdPush.Id.Hex())
+	if err != nil {
+		fmt.Println("Error starting push:", err)
+		errResponse := api_response.BuildErrorResponse(
+			http.StatusInternalServerError,
+			"Failed to start push",
+			err.Error(), "")
+		c.JSON(errResponse.Code, errResponse)
+		return
+	}
+
+	_, err = controller.omeService.UpdatePushByID(
+		c,
+		createdPush.Id, bson.M{
+			"status": "active",
+		})
+	if err != nil {
+		fmt.Println("Error updating push status:", err)
+		errResponse := api_response.BuildErrorResponse(
+			http.StatusInternalServerError,
+			"Failed to update push status",
+			err.Error(), "")
+		c.JSON(errResponse.Code, errResponse)
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"message":   "Push started successfully",
-		"push_id":   pushId.Hex(),
+		"push_id":   createdPush.Id.Hex(),
 		"rtmp_url":  body.RtmpUrl,
 		"server_ip": existingStream.ServerIpAddress,
 		"stream_id": body.StreamID,
@@ -354,6 +369,7 @@ func (controller *OmeController) StopPush(c *gin.Context) {
 		c.JSON(errResponse.Code, errResponse)
 		return
 	}
+	fmt.Println("existingActivePush ", existingActivePush)
 
 	err = controller.omeHttpClient.StopPush(existingStream.ServerIpAddress, existingActivePush.Id.Hex())
 	if err != nil {

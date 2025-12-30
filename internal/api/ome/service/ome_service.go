@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/toufiq-austcse/go-api-boilerplate/internal/api/index/model"
+	"github.com/toufiq-austcse/go-api-boilerplate/internal/api/ome/model"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -111,9 +111,6 @@ func (s OmeService) UpdateStreamByID(ctx context.Context, id primitive.ObjectID,
 
 func (s OmeService) CreatePush(
 	ctx context.Context, model *model.Push) (*model.Push, error) {
-	if model.Id.IsZero() {
-		model.Id = primitive.NewObjectID()
-	}
 	model.Id = primitive.NewObjectID()
 	currentTime := time.Now()
 	model.CreatedAt = currentTime

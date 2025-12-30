@@ -8,8 +8,8 @@ import (
 	"github.com/toufiq-austcse/go-api-boilerplate/config"
 	"github.com/toufiq-austcse/go-api-boilerplate/di"
 	"github.com/toufiq-austcse/go-api-boilerplate/docs"
-	"github.com/toufiq-austcse/go-api-boilerplate/internal/api/index/controller"
-	indexRouter "github.com/toufiq-austcse/go-api-boilerplate/internal/api/index/router"
+	"github.com/toufiq-austcse/go-api-boilerplate/internal/api/ome/controller"
+	indexRouter "github.com/toufiq-austcse/go-api-boilerplate/internal/api/ome/router"
 	"github.com/toufiq-austcse/go-api-boilerplate/internal/server"
 	"time"
 )
